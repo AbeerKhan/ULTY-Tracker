@@ -1,6 +1,6 @@
 // netlify/functions/ulty-data.js
 
-import yahooFinance from "yahoo-finance2"; // official Yahoo wrapper
+import yahooFinance from "yahoo-finance2";
 
 export async function handler(event, context) {
   try {
@@ -12,10 +12,10 @@ export async function handler(event, context) {
     const startDate = params.start || "2024-03-15"; // YYYY-MM-DD
     const interval = params.interval || "1wk";      // 1d, 1wk, 1mo
 
-    // Call Yahoo Finance historical API
-    const result = await yahooFinance.historical(ticker, {
-      period1: startDate,
+    // Call Yahoo Finance chart API
+    const result = await yahooFinance.chart(ticker, {
       interval: interval,
+      period1: startDate, // start date
     });
 
     // Return JSON response
@@ -28,8 +28,7 @@ export async function handler(event, context) {
         {
           symbol: ticker,
           interval: interval,
-          count: result.length,
-          data: result,
+          data: result.quotes || [], // chart returns { meta, quotes, indicators }
         },
         null,
         2
