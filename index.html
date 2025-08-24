@@ -1,123 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>ULTY Dividend & DRIP Calculator</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    body {
-      margin: 0; padding: 0; background: #eef2f8; color: #1a233a; font-family: 'Segoe UI', Arial, sans-serif;
-    }
-    .container {
-      max-width: 960px; margin: 40px auto; background: white; border-radius: 16px; box-shadow: 0 5px 32px #1b264040; padding: 30px 20px;
-    }
-    h1 { color: #1654a7; letter-spacing: 2px; }
-    label { margin: 0 1rem 0 0; font-size: 1.15rem; }
-    input[type=number] {
-      padding: 8px; border-radius: 5px; border: 1px solid #bbb; width: 90px; margin-right: 15px;
-      font-size: 1.05rem;
-    }
-    .toggle {
-      display: inline-flex; align-items: center; margin-left: 8px;
-    }
-    .switch {
-      position: relative; width: 48px; height: 24px;
-    }
-    .switch input { display: none; }
-    .slider {
-      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-      background: #b0bee3; border-radius: 24px; transition: .4s;
-    }
-    .slider:before {
-      position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px;
-      background: #fff; transition: .4s; border-radius: 50%;
-      box-shadow: 0 0 6px #6477b4a0;
-    }
-    input:checked + .slider {
-      background: #27ad7e;
-    }
-    input:checked + .slider:before {
-      transform: translateX(24px);
-    }
-    button {
-      background: linear-gradient(90deg,#5c82ff 10%,#27ad7e 90%);
-      color: white; border: none; border-radius: 8px;
-      padding: 10px 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer;
-      box-shadow: 0 2px 8px #aac4f830; margin-left: 18px; margin-top: 15px;
-    }
-    table {
-      border-collapse: collapse; width: 100%; margin: 30px 0 10px;
-      background: #f8fbfd; border-radius: 10px; overflow: hidden;
-    }
-    th, td {
-      border: 1px solid #dde2ea; padding: 6px 8px; text-align: right;
-      font-size: 1rem;
-    }
-    th {
-      background: #2a4282; color: #fff; letter-spacing: 1px;
-    }
-    tr:nth-child(even) td { background: #e6edef; }
-    tr.highlighted td { background: #c8ffe0; font-weight: bold; }
-    .summary {
-      background: #eefdcb; margin-top: 0; padding: 14px 18px; border-radius: 8px; color: #1b3630; font-size: 1.12rem;
-      box-shadow: 0 0 15px #bae9d320;
-    }
-    @media (max-width: 650px) {
-      .container { padding: 10px 2px; }
-      table, th, td { font-size: .98rem; }
-      .summary { font-size: 1rem; padding: 9px 6px;}
-      button { margin-top: 12px; padding: 6px 13px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>ULTY Dividend & DRIP Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>ULTY Dividend & DRIP Calculator</h1>
-    <div style="margin-bottom:14px;">
-      <label for="sharesInput">How many shares?</label>
-      <input type="number" id="sharesInput" value="100" min="1" step="1" />
-      <span class="toggle">
-        <label>DRIP</label>
-        <label class="switch">
-          <input id="dripSwitch" type="checkbox" />
-          <span class="slider"></span>
-        </label>
-      </span>
-      <button onclick="calculate()">Calculate</button>
-    </div>
-    <div id="summary" class="summary"></div>
-    <div id="result"></div>
-    <div style="font-size:.89rem;color:#468;">
-      <br>Dividend data and prices: Yahoo Finance, August 2025.<br>
-      DRIP = dividends reinvested at end-of-week price, fractional shares allowed.<br>
-      Calculator built for demo/education. Verify before investing.
-    </div>
-  </div>
+<div class="container">
+  <h1>ULTY Dividend & DRIP Calculator</h1>
+
+  <label>Shares:</label><input type="number" id="sharesInput" value="100" min="1">
+  <label>DRIP:</label>
+  <label class="switch"><input type="checkbox" id="dripSwitch"><span class="slider"></span></label>
+  <button onclick="calculate()">Calculate</button>
+
+  <div class="summary" id="summary"></div>
+  <div id="result"></div>
+  <p>Dividend data from YieldMax, prices from Yahoo Finance. Fractional shares allowed for DRIP. Verify before investing.</p>
+</div>
+
 <script>
-// Weekly close price & dividend data for ULTY from Yahoo Finance and YieldMax (2025-03-17 to 2025-08-22)
-const weeks = [
-  { week: "2025-03-17", close: 5.00, dividend: 0.1006 },
-  { week: "2025-03-24", close: 5.10, dividend: 0.1003 },
-  { week: "2025-03-31", close: 5.20, dividend: 0.1008 },
-  { week: "2025-04-07", close: 5.30, dividend: 0.1029 },
-  { week: "2025-04-14", close: 5.40, dividend: 0.1035 },
-  { week: "2025-04-21", close: 5.50, dividend: 0.0960 },
-  { week: "2025-04-28", close: 5.60, dividend: 0.0952 },
-  { week: "2025-05-05", close: 5.70, dividend: 0.1006 },
-  { week: "2025-05-12", close: 5.80, dividend: 0.1003 },
-  { week: "2025-05-19", close: 5.90, dividend: 0.1008 },
-  { week: "2025-05-26", close: 6.00, dividend: 0.1029 },
-  { week: "2025-06-02", close: 6.10, dividend: 0.1035 },
-  { week: "2025-06-09", close: 6.20, dividend: 0.0960 },
-  { week: "2025-06-16", close: 6.30, dividend: 0.0952 },
-  { week: "2025-06-23", close: 6.40, dividend: 0.1006 },
-  { week: "2025-06-30", close: 6.50, dividend: 0.1003 },
-  { week: "2025-07-07", close: 6.60, dividend: 0.1008 },
-  { week: "2025-07-14", close: 6.70, dividend: 0.1029 },
-  { week: "2025-07-21", close: 6.80, dividend: 0.1035 },
-  { week: "2025-07-28", close: 6.90, dividend: 0.0960 },
-  { week: "2025-08-04", close: 7.00, dividend: 0.0952 },
-  { week: "2025-08-11", close: 7.10, dividend: 0.1006 },
-  { week: "
-::contentReference[oaicite:62]{index=62}
- 
+let weeks = [];
+
+async function loadData() {
+  try {
+    const res = await fetch("/.netlify/functions/ulty-data");
+    weeks = await res.json();
+    calculate();
+  } catch(err) {
+    console.error("Failed to load data", err);
+    alert("Failed to load ULTY data.");
+  }
+}
+
+function calculate() {
+  if(!weeks || weeks.length === 0) return;
+
+  const shares0 = parseFloat(document.getElementById('sharesInput').value) || 0;
+  const drip = document.getElementById('dripSwitch').checked;
+  if(shares0 < 1) { alert("Enter at least 1 share"); return; }
+
+  let rows = "", totalCashDiv = 0, curShares = shares0, totalDiv = 0;
+
+  for(let i=0;i<weeks.length;i++){
+    const w = weeks[i];
+    const div = w.dividend * curShares;
+    totalDiv += div;
+
+    if(drip){
+      const addShares = div / w.close;
+      curShares += addShares;
+    } else {
+      totalCashDiv += div;
+    }
+
+    rows += `<tr>
+      <td>${w.week}</td>
+      <td>${w.close.toFixed(2)}</td>
+      <td>${w.dividend.toFixed(4)}</td>
+      <td>${curShares.toFixed(4)}</td>
+      <td>${div.toFixed(2)}</td>
+      <td>${drip ? (curShares*w.close).toFixed(2) : "-"}</td>
+    </tr>`;
+  }
+
+  const summaryText = drip 
+    ? `DRIP ON: Final shares ${curShares.toFixed(4)}, portfolio value $${(curShares*weeks[weeks.length-1].close).toFixed(2)}, cumulative dividends reinvested $${totalDiv.toFixed(2)}`
+    : `DRIP OFF: Cash dividends $${totalCashDiv.toFixed(2)}, final portfolio value $${(curShares*weeks[weeks.length-1].close).toFixed(2)}`;
+
+  document.getElementById('summary').innerHTML = summaryText;
+
+  document.getElementById('result').innerHTML = `<table>
+    <tr><th>Week</th><th>Close</th><th>Dividend</th><th>Shares</th><th>Div Paid</th><th>DRIP Value</th></tr>${rows}
+  </table>`;
+}
+
+window.onload = loadData;
+</script>
+</body>
+</html>
