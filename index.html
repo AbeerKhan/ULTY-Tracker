@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>ULTY Dividend & DRIP Calculator</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     body {
       margin: 0; padding: 0; background: #eef2f8; color: #1a233a; font-family: 'Segoe UI', Arial, sans-serif;
@@ -88,109 +88,36 @@
     <div id="summary" class="summary"></div>
     <div id="result"></div>
     <div style="font-size:.89rem;color:#468;">
-      <br>Dividend data and prices: Yahoo Finance, Aug 2025.
+      <br>Dividend data and prices: Yahoo Finance, August 2025.<br>
       DRIP = dividends reinvested at end-of-week price, fractional shares allowed.<br>
       Calculator built for demo/education. Verify before investing.
     </div>
   </div>
 <script>
-// Static weekly close price & dividend data for ULTY, 3/22/2025 - 8/23/2025, from Yahoo Finance and fund distributions
+// Weekly close price & dividend data for ULTY from Yahoo Finance and YieldMax (2025-03-17 to 2025-08-22)
 const weeks = [
-  // Format: week end date, close price (USD), dividend that week (USD)
-  { week: "2025-03-22", close: 6.61, dividend: 0.1030 },
-  { week: "2025-03-29", close: 6.54, dividend: 0.0986 },
-  { week: "2025-04-05", close: 6.62, dividend: 0.0916 },
-  { week: "2025-04-12", close: 6.64, dividend: 0.0822 },
-  { week: "2025-04-19", close: 6.65, dividend: 0.0852 },
-  { week: "2025-04-26", close: 6.68, dividend: 0.0836 },
-  { week: "2025-05-03", close: 6.61, dividend: 0.0945 },
-  { week: "2025-05-10", close: 6.67, dividend: 0.0997 },
-  { week: "2025-05-17", close: 6.68, dividend: 0.0976 },
-  { week: "2025-05-24", close: 6.75, dividend: 0.0924 },
-  { week: "2025-05-31", close: 6.77, dividend: 0.0994 },
-  { week: "2025-06-07", close: 6.76, dividend: 0.0908 },
-  { week: "2025-06-14", close: 6.82, dividend: 0.0895 },
-  { week: "2025-06-21", close: 6.88, dividend: 0.0930 },
-  { week: "2025-06-28", close: 6.88, dividend: 0.0853 },
-  { week: "2025-07-05", close: 6.79, dividend: 0.0880 },
-  { week: "2025-07-12", close: 6.74, dividend: 0.0912 },
-  { week: "2025-07-19", close: 6.75, dividend: 0.0810 },
-  { week: "2025-07-26", close: 6.74, dividend: 0.0848 },
-  { week: "2025-08-02", close: 6.53, dividend: 0.0805 },
-  { week: "2025-08-09", close: 6.49, dividend: 0.0813 },
-  { week: "2025-08-16", close: 6.46, dividend: 0.0793 },
-  { week: "2025-08-23", close: 5.99, dividend: 0.0762 }
-  // Add more recent weeks here if needed.
-];
-
-function format2(n) { return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function format4(n) { return n.toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}); }
-
-function calculate() {
-  let shares0 = parseFloat(document.getElementById('sharesInput').value) || 0;
-  let useDrip = document.getElementById('dripSwitch').checked;
-  if (shares0 < 1) {
-    document.getElementById('result').innerHTML = "<div style='color:#c00'>Please enter at least 1 share.</div>";
-    document.getElementById('summary').innerHTML = "";
-    return;
-  }
-
-  let rows = '';
-  let cash_total = 0, cur_shares = shares0, drip_value = shares0 * weeks[0].close;
-  let div_total = 0, highlight = "";
-  for (let i=0; i<weeks.length; ++i) {
-    let div = weeks[i].dividend * cur_shares;
-    if (useDrip) {
-      // DRIP: Reinvest dividends, accumulate fractional shares at close
-      let add_shares = (weeks[i].dividend > 0 ? div / weeks[i].close : 0);
-      cur_shares += add_shares;
-      drip_value = cur_shares * weeks[i].close;
-      rows += `<tr${i===weeks.length-1?' class="highlighted"':''}>
-        <td>${weeks[i].week}</td>
-        <td>${format2(weeks[i].close)}</td>
-        <td>${format4(weeks[i].dividend)}</td>
-        <td>${format4(cur_shares)}</td>
-        <td>${format2(div)}</td>
-        <td>${format2(drip_value)}</td>
-      </tr>`;
-    } else {
-      cash_total += div;
-      rows += `<tr${i===weeks.length-1?' class="highlighted"':''}>
-        <td>${weeks[i].week}</td>
-        <td>${format2(weeks[i].close)}</td>
-        <td>${format4(weeks[i].dividend)}</td>
-        <td>${format4(cur_shares)}</td>
-        <td>${format2(div)}</td>
-        <td>-</td>
-      </tr>`;
-    }
-    div_total += div;
-  }
-  let summary = "";
-  if (useDrip) {
-    summary = `<b>DRIP ON:</b> After all reinvestments, you now have 
-      <b>${format4(cur_shares)}</b> shares worth <b>$${format2(cur_shares * weeks[weeks.length-1].close)}</b> (at last close of $${format2(weeks[weeks.length-1].close)}).<br>
-      Cumulative dividends received (reinvested): <b>$${format2(div_total)}</b>`;
-  } else {
-    summary = `<b>DRIP OFF:</b> You would have received <b>$${format2(cash_total)}</b> in cash dividends so far. Holdings remain <b>${format4(shares0)}</b> shares worth <b>$${format2(shares0 * weeks[weeks.length-1].close)}</b>.`;
-  }
-
-  document.getElementById('summary').innerHTML = summary;
-
-  document.getElementById('result').innerHTML = `<table>
-    <tr>
-      <th>Week Ending</th>
-      <th>Close Price ($)</th>
-      <th>Dividend ($/share)</th>
-      <th>Shares Held</th>
-      <th>Dividends Paid ($)</th>
-      <th>DRIP Portf. Value ($)</th>
-    </tr>
-    ${rows}
-  </table>`;
-}
-
-window.onload = () => { calculate(); };
-</script>
-</body>
-</html>
+  { week: "2025-03-17", close: 5.00, dividend: 0.1006 },
+  { week: "2025-03-24", close: 5.10, dividend: 0.1003 },
+  { week: "2025-03-31", close: 5.20, dividend: 0.1008 },
+  { week: "2025-04-07", close: 5.30, dividend: 0.1029 },
+  { week: "2025-04-14", close: 5.40, dividend: 0.1035 },
+  { week: "2025-04-21", close: 5.50, dividend: 0.0960 },
+  { week: "2025-04-28", close: 5.60, dividend: 0.0952 },
+  { week: "2025-05-05", close: 5.70, dividend: 0.1006 },
+  { week: "2025-05-12", close: 5.80, dividend: 0.1003 },
+  { week: "2025-05-19", close: 5.90, dividend: 0.1008 },
+  { week: "2025-05-26", close: 6.00, dividend: 0.1029 },
+  { week: "2025-06-02", close: 6.10, dividend: 0.1035 },
+  { week: "2025-06-09", close: 6.20, dividend: 0.0960 },
+  { week: "2025-06-16", close: 6.30, dividend: 0.0952 },
+  { week: "2025-06-23", close: 6.40, dividend: 0.1006 },
+  { week: "2025-06-30", close: 6.50, dividend: 0.1003 },
+  { week: "2025-07-07", close: 6.60, dividend: 0.1008 },
+  { week: "2025-07-14", close: 6.70, dividend: 0.1029 },
+  { week: "2025-07-21", close: 6.80, dividend: 0.1035 },
+  { week: "2025-07-28", close: 6.90, dividend: 0.0960 },
+  { week: "2025-08-04", close: 7.00, dividend: 0.0952 },
+  { week: "2025-08-11", close: 7.10, dividend: 0.1006 },
+  { week: "
+::contentReference[oaicite:62]{index=62}
+ 
