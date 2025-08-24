@@ -1,10 +1,6 @@
 // netlify/functions/ulty-data.js
 
-// Import dependencies
 import yahooFinance from "yahoo-finance2"; // official Yahoo wrapper
-import csv from "csvtojson";               // in case you want CSV parsing later
-import cheerio from "cheerio";             // in case you use scraping later
-import axios from "axios";                 // in case you keep some axios calls
 
 export async function handler(event, context) {
   try {
