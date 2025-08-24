@@ -1,45 +1,58 @@
-// ulty-data.js
-const axios = require("axios");
-const cheerio = require("cheerio");
-const csv = require("csvtojson");
+// netlify/functions/ulty-data.js
 
-exports.handler = async function(event, context) {
+// Import dependencies
+import yahooFinance from "yahoo-finance2"; // official Yahoo wrapper
+import csv from "csvtojson";               // in case you want CSV parsing later
+import cheerio from "cheerio";             // in case you use scraping later
+import axios from "axios";                 // in case you keep some axios calls
+
+export async function handler(event, context) {
   try {
-    // 1. Fetch Yahoo Finance weekly prices CSV
-    const yahooCSVUrl = "https://query1.finance.yahoo.com/v7/finance/download/ULTY?period1=1710566400&period2=1734777600&interval=1wk&events=history";
-    const yahooRes = await axios.get(yahooCSVUrl);
-    const pricesJSON = await csv().fromString(yahooRes.data);
+    // Get ticker from query parameter (?symbol=AAPL), default to ULTY
+    const params = event.queryStringParameters || {};
+    const ticker = params.symbol || "ULTY";
 
-    // 2. Fetch YieldMax dividends
-    const yieldRes = await axios.get("https://www.yieldmaxetfs.com/our-etfs/ulty/");
-    const $ = cheerio.load(yieldRes.data);
-    let dividends = [];
-    $("table.distribution-table tbody tr").each((i, el) => {
-      const date = $(el).find("td:nth-child(1)").text().trim();
-      const dividend = parseFloat($(el).find("td:nth-child(2)").text().replace("$","").trim());
-      if(date && dividend) dividends.push({date, dividend});
+    // Get date range params if provided
+    const startDate = params.start || "2024-03-15"; // YYYY-MM-DD
+    const interval = params.interval || "1wk";      // 1d, 1wk, 1mo
+
+    // Call Yahoo Finance historical API
+    const result = await yahooFinance.historical(ticker, {
+      period1: startDate,
+      interval: interval,
     });
 
-    // 3. Combine prices and dividends
-    let weeks = pricesJSON.map(p => {
-      const divObj = dividends.find(d => d.date === p.Date);
-      return {
-        week: p.Date,
-        close: parseFloat(p.Close),
-        dividend: divObj ? divObj.dividend : 0
-      };
-    });
-
+    // Return JSON response
     return {
       statusCode: 200,
-      body: JSON.stringify(weeks)
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        {
+          symbol: ticker,
+          interval: interval,
+          count: result.length,
+          data: result,
+        },
+        null,
+        2
+      ),
     };
-
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({error: "Failed to fetch data"})
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        {
+          message: "Failed to fetch Yahoo Finance data",
+          error: error.message,
+        },
+        null,
+        2
+      ),
     };
   }
-};
+}
